@@ -3002,7 +3002,7 @@ class PiCamera(object):
                     "Invalid analog gain value: %d (valid range 0..16)" % value)
         except TypeError:
             raise PiCameraValueError("Invalid analog gain value: %s" % value)
-        self._camera.control.params[mmal.MMAL_PARAMETER_ANALOG_GAIN] = Fraction(value*65536,65536)
+        self._camera.control.params[mmal.MMAL_PARAMETER_ANALOG_GAIN] = mo.to_rational(value)
     analog_gain = property(_get_analog_gain, _set_analog_gain, doc="""\
         Retrieves the current analog gain of the camera.
 
@@ -3026,7 +3026,7 @@ class PiCamera(object):
                     "Invalid digital gain value: %d (valid range 0..64)" % value)
         except TypeError:
             raise PiCameraValueError("Invalid digital gain value: %s" % value)
-        self._camera.control.params[mmal.MMAL_PARAMETER_DIGITAL_GAIN] = Fraction(value*65536,65536)
+        self._camera.control.params[mmal.MMAL_PARAMETER_DIGITAL_GAIN] = mo.to_rational(value)
     digital_gain = property(_get_digital_gain, _set_digital_gain, doc="""\
         Retrieves the current digital gain of the camera.
 
