@@ -2251,7 +2251,7 @@ class PiCamera(object):
             colorspace=self._camera.outputs[0].colorspace
         )
 
-    def _configure_camera(self, old, new):
+    def _configure_camera(self, old, new, small_preview=False):
         """
         An internal method for setting a new camera mode, framerate,
         resolution, clock_mode, and/or ISP blocks.
@@ -2323,8 +2323,12 @@ class PiCamera(object):
             cc.max_stills_h = new.resolution.height
             cc.stills_yuv422 = 0
             cc.one_shot_stills = 1
-            cc.max_preview_video_w = new.resolution.width
-            cc.max_preview_video_h = new.resolution.height
+            if small_preview:
+                cc.max_preview_video_w = 1920
+                cc.max_preview_video_h = 1080
+            else:
+                cc.max_preview_video_w = new.resolution.width
+                cc.max_preview_video_h = new.resolution.height
             cc.num_preview_video_frames = max(3, fps_high // 10)
             cc.stills_capture_circular_buffer_height = 0
             cc.fast_preview_resume = 0
@@ -2337,6 +2341,8 @@ class PiCamera(object):
                     preview_resolution.height > new.resolution.height
                     ):
                 preview_resolution = new.resolution
+            if small_preview:
+                preview_resolution = mo.to_resolution((1920,1080))
             for port in self._camera.outputs:
                 port.params[mmal.MMAL_PARAMETER_FPS_RANGE] = fps_range
                 if port.index == self.CAMERA_PREVIEW_PORT:
@@ -2632,9 +2638,14 @@ class PiCamera(object):
                     "Invalid resolution requested: %r" % (value,))
         config = self._get_config()
         self._disable_camera()
-        self._configure_camera(config, config._replace(resolution=value))
-        self._configure_splitter()
-        self._enable_camera()
+        try:
+            self._configure_camera(config, config._replace(resolution=value))
+            self._configure_splitter()
+            self._enable_camera()
+        except PiCameraMMALError:
+            self._configure_camera(config, config._replace(resolution=value), small_preview=True)
+            self._configure_splitter()
+            self._enable_camera()
     resolution = property(_get_resolution, _set_resolution, doc="""
         Retrieves or sets the resolution at which image captures, video
         recordings, and previews will be captured.
